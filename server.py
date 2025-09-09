@@ -1,30 +1,75 @@
-from fastapi import FastAPI, Header, Request, Response
-import uvicorn
-import httpx # Used for making asynchronous HTTP requests
+import requests
+import os  # <-- Import the 'os' module to access environment variables
+from fastmcp import FastMCP
+from pydantic import BaseModel, Field
 
-app = FastAPI()
+# --- Tool Input Schema ---
+# This remains the same.
+class DeeplinkCheckerInput(BaseModel):
+    """Input model for the check_deeplink tool."""
+    db_name: str = Field(..., description="The name of the database, e.g., 'NDTVProfit'.")
+    user_id: str = Field(..., description="The unique identifier for the user.")
+    campaign_id: str = Field(..., description="The unique identifier for the campaign.")
+    date: str = Field(..., description="The date for the check in YYYY-MM-DD format, e.g., '2025-08-30'.")
+    region: str = Field(..., description="The server region, e.g., 'DC1'.")
+    check_url: str = Field(
+        "https://intercom-api-gateway.moengage.com/v2/iw/check-deeplink",
+        description="The URL of the deeplink checker service to hit."
+    )
 
-# Define the external API URL
-EXTERNAL_API_URL = "https://intercom-api-gateway.moengage.com/v2/iw/check-deeplink"
+# --- MCP Server Setup ---
+mcp_app = FastMCP(
+    title="Deeplink Verification Server",
+    description="A server with tools to verify marketing campaign deeplinks."
+)
 
-# --- 2. Define the API Endpoint ---
-@app.post("/check-deeplink", tags=["Deeplink Proxy"])
-async def forward_deeplink_check(
-    request: Request,
-    response: Response,
-    authorization: str = Header(...) 
-):
-    json_payload = await request.json()
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        headers = {
-            "Authorization": authorization,
-            "Content-Type": "application/json"
-        }
+# --- Tool Definition ---
+@mcp_app.tool(
+    name="check_deeplink",
+    description="Uses a pre-configured auth token to check a campaign deeplink against a service."
+)
+def check_deeplink(inputs: DeeplinkCheckerInput) -> dict:
+    """
+    Checks a deeplink by using an authentication token provided as an
+    environment variable and hitting the specified deeplink check endpoint.
+    """
+    # 1. Fetch the authentication token from an environment variable
+    print("Fetching token from environment variable...")
+    auth_token = os.environ.get("refresh_token")
 
-        external_response = await client.post(EXTERNAL_API_URL, json=json_payload, headers=headers)
-        response.status_code = external_response.status_code
-        return external_response.json()
+    if not auth_token:
+        print("ERROR: refresh_token environment variable not set.")
+        return {"error": "Authentication token is not configured on the server."}
 
+    print("Successfully fetched token.")
+
+    # 2. Use the token to call the deeplink check API
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {auth_token}"
+    }
+
+    payload = {
+        "db_name": inputs.db_name,
+        "user_id": inputs.user_id,
+        "campaign_id": inputs.campaign_id,
+        "date": inputs.date,
+        "region": inputs.region
+    }
+
+    try:
+        print(f"Sending POST request to {inputs.check_url}...")
+        check_response = requests.post(inputs.check_url, headers=headers, json=payload, timeout=30)
+        check_response.raise_for_status()
+
+        print("Successfully received response from deeplink checker.")
+        return check_response.json()
+
+    except requests.exceptions.RequestException as e:
+        return {"error": f"An error occurred while checking the deeplink: {e}"}
+
+# --- Main Entry Point ---
+# For local testing. This part is ignored by FastMCP Cloud.
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
-
+    print("Starting MCP server...")
+    mcp_app.run()
