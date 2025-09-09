@@ -19,8 +19,7 @@ class DeeplinkCheckerInput(BaseModel):
 
 # --- MCP Server Setup ---
 mcp_app = FastMCP(
-    title="Deeplink Verification Server",
-    description="A server with tools to verify marketing campaign deeplinks."
+    "Deeplink Verification Server"
 )
 
 # --- Tool Definition ---
@@ -72,4 +71,4 @@ def check_deeplink(inputs: DeeplinkCheckerInput) -> dict:
 # For local testing. This part is ignored by FastMCP Cloud.
 if __name__ == "__main__":
     print("Starting MCP server...")
-    mcp_app.run()
+    mcp_app.run(transport="http", port=8000)
