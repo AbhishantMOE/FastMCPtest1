@@ -71,4 +71,4 @@ def check_deeplink(inputs: DeeplinkCheckerInput) -> dict:
 # For local testing. This part is ignored by FastMCP Cloud.
 if __name__ == "__main__":
     print("Starting MCP server...")
-    mcp_app.run(transport="http", port=8000)
+    mcp_app.run()
