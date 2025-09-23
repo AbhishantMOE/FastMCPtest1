@@ -34,7 +34,7 @@ def check_deeplink(inputs: DeeplinkCheckerInput) -> dict:
     """
     # 1. Fetch the authentication token from an environment variable
     print("Fetching token from environment variable...")
-    auth_token = os.environ.get("refresh_token")
+    auth_token = os.environ.get("REFRESH_TOKEN")
 
     if not auth_token:
         print("ERROR: refresh_token environment variable not set.")
