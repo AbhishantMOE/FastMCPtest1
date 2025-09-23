@@ -1,16 +1,15 @@
 import requests
-import os  # <-- Import the 'os' module to access environment variables
+import os
 from fastmcp import FastMCP
 from pydantic import BaseModel, Field
 
 # --- Tool Input Schema ---
-# This remains the same.
 class DeeplinkCheckerInput(BaseModel):
     """Input model for the check_deeplink tool."""
     db_name: str = Field(..., description="The name of the database, e.g., 'NDTVProfit'.")
     user_id: str = Field(..., description="The unique identifier for the user.")
     campaign_id: str = Field(..., description="The unique identifier for the campaign.")
-    date: str = Field(..., description="The date for the check in YYYY-MM-DD format, e.g., '2025-08-30'.")
+    date: str = Field(..., description="The date for the check in YYYY-MM-DD format, e.g., '2025-09-24'.")
     region: str = Field(..., description="The server region, e.g., 'DC1'.")
     check_url: str = Field(
         "https://intercom-api-gateway.moengage.com/v2/iw/check-deeplink",
@@ -25,7 +24,7 @@ mcp_app = FastMCP(
 # --- Tool Definition ---
 @mcp_app.tool(
     name="check_deeplink",
-    description="Uses a pre-configured auth token to check a campaign deeplink against a service."
+    description="Fetches and compares the deeplink sent to a user against the one configured during campaign creation. It returns the result, highlighting any discrepancies."
 )
 def check_deeplink(inputs: DeeplinkCheckerInput) -> dict:
     """
@@ -37,12 +36,11 @@ def check_deeplink(inputs: DeeplinkCheckerInput) -> dict:
     auth_token = os.environ.get("REFRESH_TOKEN")
 
     if not auth_token:
-        print("ERROR: refresh_token environment variable not set.")
+        print("ERROR: REFRESH_TOKEN environment variable not set.")
         return {"error": "Authentication token is not configured on the server."}
 
     print("Successfully fetched token.")
-    print(auth_token)
-
+    
     # 2. Use the token to call the deeplink check API
     headers = {
         "Content-Type": "application/json",
