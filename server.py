@@ -41,6 +41,7 @@ def check_deeplink(inputs: DeeplinkCheckerInput) -> dict:
         return {"error": "Authentication token is not configured on the server."}
 
     print("Successfully fetched token.")
+    print(auth_token)
 
     # 2. Use the token to call the deeplink check API
     headers = {
