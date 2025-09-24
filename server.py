@@ -26,6 +26,26 @@ def check_deeplink(inputs: DeeplinkCheckerInput) -> dict:
     """
     Checks a deeplink by using an authentication token provided as an
     environment variable and hitting the specified deeplink check endpoint.
+
+    Args:
+        db_name: The specific database name for the query.
+        user_id: The unique identifier for the user whose deeplink is being checked.
+        campaign_id: The unique identifier for the campaign that sent the deeplink.
+        date: The specific date the campaign was sent, in YYYY-MM-DD format.
+        region: The server region where the campaign data is hosted.
+
+    returns:
+        A json object
+        {
+            "status": ("success" if successful , "failure" if failed),
+            "error_message": (error message if failed),
+            "data": {
+                "deeplink_url": "",
+                "user_deeplink": "",
+                "urls_match": true if urls match , false if urls do not match
+            }
+        }
+        
     """
     # The check URL is now a fixed constant within the function.
     CHECK_URL = "https://intercom-api-gateway.moengage.com/v2/iw/check-deeplink"
