@@ -4,6 +4,7 @@ from fastmcp import FastMCP
 from pydantic import BaseModel, Field
 
 # --- Tool Input Schema ---
+# This model defines the inputs for the tool, which FastMCP uses to generate the UI and API schema.
 class DeeplinkCheckerInput(BaseModel):
     """Input model for the check_deeplink tool."""
     db_name: str = Field(..., description="The name of the database, e.g., 'NDTVProfit'.")
@@ -22,7 +23,7 @@ mcp_app = FastMCP(
     name="check_deeplink",
     description="Fetches and compares the deeplink sent to a user against the one configured during campaign creation. It returns the result, highlighting any discrepancies."
 )
-def check_deeplink(inputs: DeeplinkCheckerInput) -> dict:
+def check_deeplink(db_name: str, user_id: str, campaign_id: str, date: str, region: str) -> str:
     """
     Checks a deeplink by using an authentication token provided as an
     environment variable and hitting the specified deeplink check endpoint.
@@ -34,20 +35,10 @@ def check_deeplink(inputs: DeeplinkCheckerInput) -> dict:
         date: The specific date the campaign was sent, in YYYY-MM-DD format.
         region: The server region where the campaign data is hosted.
 
-    returns:
-        A json object
-        {
-            "status": ("success" if successful , "failure" if failed),
-            "error_message": (error message if failed),
-            "data": {
-                "deeplink_url": "",
-                "user_deeplink": "",
-                "urls_match": true if urls match , false if urls do not match
-            }
-        }
-        
+    Returns:
+        A string indicating success or the specific error message.
     """
-    # The check URL is now a fixed constant within the function.
+    # The check URL is a fixed constant.
     CHECK_URL = "https://intercom-api-gateway.moengage.com/v2/iw/check-deeplink"
     
     # 1. Fetch the authentication token from an environment variable
@@ -56,7 +47,7 @@ def check_deeplink(inputs: DeeplinkCheckerInput) -> dict:
 
     if not auth_token:
         print("ERROR: REFRESH_TOKEN environment variable not set.")
-        return {"error": "Authentication token is not configured on the server."}
+        return "Authentication token is not configured on the server."
 
     print("Successfully fetched token.")
     
@@ -67,11 +58,11 @@ def check_deeplink(inputs: DeeplinkCheckerInput) -> dict:
     }
 
     payload = {
-        "db_name": inputs.db_name,
-        "user_id": inputs.user_id,
-        "campaign_id": inputs.campaign_id,
-        "date": inputs.date,
-        "region": inputs.region
+        "db_name": db_name,
+        "user_id": user_id,
+        "campaign_id": campaign_id,
+        "date": date,
+        "region": region
     }
 
     try:
@@ -79,11 +70,25 @@ def check_deeplink(inputs: DeeplinkCheckerInput) -> dict:
         check_response = requests.post(CHECK_URL, headers=headers, json=payload, timeout=30)
         check_response.raise_for_status()
 
+        response_data = check_response.json()
         print("Successfully received response from deeplink checker.")
-        return check_response.json()
 
+        # 3. Process the response and return the appropriate message
+        if response_data.get("status") == "success":
+            return "Urls are matching, your deeplink is working correctly at clients end"
+        else:
+            return response_data.get("error_message", "An unknown error occurred, and no error message was provided.")
+
+    except requests.exceptions.HTTPError as e:
+        # Handle cases where the API returns a non-2xx status code
+        return f"HTTP Error: {e.response.status_code} - {e.response.text}"
     except requests.exceptions.RequestException as e:
-        return {"error": f"An error occurred while checking the deeplink: {e}"}
+        # Handle network-related errors
+        return f"An error occurred while checking the deeplink: {e}"
+    except ValueError:
+        # Handle cases where the response is not valid JSON
+        return "Failed to decode the JSON response from the server."
+
 
 # --- Main Entry Point ---
 # For local testing. This part is ignored by FastMCP Cloud.
