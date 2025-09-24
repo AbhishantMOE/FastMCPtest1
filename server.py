@@ -6,8 +6,7 @@ from typing import Dict, Any
 
 # --- MCP Server Setup ---
 mcp_app = FastMCP(
-    "Deeplink Verification Server",
-    description="A server that provides tools for verifying marketing campaign deeplinks."
+    "Deeplink Verification Server"
 )
 
 # --- Tool Definition ---
@@ -36,8 +35,7 @@ def check_deeplink(
         A dictionary with a 'status' and either a 'data' key on success or an 'error' key on failure.
     """
     CHECK_URL = "https://intercom-api-gateway.moengage.com/v2/iw/check-deeplink"
-    AUTH_TOKEN_ENV_VAR = "DEEPLINK_CHECKER_REFRESH_TOKEN"
-    auth_token = os.environ.get(AUTH_TOKEN_ENV_VAR)
+    auth_token = os.environ.get(REFRESH_TOKEN)
 
     if not auth_token:
         print(f"ERROR: {AUTH_TOKEN_ENV_VAR} environment variable not set.")
@@ -72,6 +70,5 @@ def check_deeplink(
 
 # --- Main Entry Point ---
 if __name__ == "__main__":
-    os.environ["DEEPLINK_CHECKER_REFRESH_TOKEN"] = "your_test_token_here"
     print("Starting MCP server for local testing...")
     mcp_app.run()
