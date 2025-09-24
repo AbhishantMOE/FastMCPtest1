@@ -35,9 +35,14 @@ def check_deeplink(
         A dictionary with a 'status' and either a 'data' key on success or an 'error' key on failure.
     """
     CHECK_URL = "https://intercom-api-gateway.moengage.com/v2/iw/check-deeplink"
-    auth_token = os.environ.get("REFRESH_TOKEN")
+    
+    # --- FIX: Ensure the environment variable name is consistent ---
+    # It is best practice to use a more specific name to avoid conflicts.
+    AUTH_TOKEN_ENV_VAR = "REFRESH_TOKEN" 
+    auth_token = os.environ.get(AUTH_TOKEN_ENV_VAR)
 
     if not auth_token:
+        # --- FIX: Corrected the variable name in the error message ---
         print(f"ERROR: {AUTH_TOKEN_ENV_VAR} environment variable not set.")
         return {
             "status": "error",
@@ -54,7 +59,10 @@ def check_deeplink(
     }
 
     try:
+        # For debugging, print the payload to see exactly what is being sent
+        print(f"Sending payload: {payload}")
         print(f"Sending POST request to {CHECK_URL}...")
+        
         response = requests.post(CHECK_URL, headers=headers, json=payload, timeout=30)
         response.raise_for_status()
 
@@ -63,6 +71,7 @@ def check_deeplink(
 
     except requests.exceptions.HTTPError as http_err:
         print(f"HTTP error occurred: {http_err}")
+        # Return the actual response from the server, which often contains a specific reason for the 400 error
         return {"status": "error", "error": f"An HTTP error occurred: {http_err}. Response: {response.text}"}
     except requests.exceptions.RequestException as req_err:
         print(f"Request error occurred: {req_err}")
@@ -70,5 +79,8 @@ def check_deeplink(
 
 # --- Main Entry Point ---
 if __name__ == "__main__":
+    # For local testing, you must set the environment variable
+    # Replace "your_actual_token" with a valid token for testing
+    os.environ["REFRESH_TOKEN"] = "your_actual_token"
     print("Starting MCP server for local testing...")
     mcp_app.run()
