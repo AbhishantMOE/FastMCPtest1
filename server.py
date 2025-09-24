@@ -11,10 +11,6 @@ class DeeplinkCheckerInput(BaseModel):
     campaign_id: str = Field(..., description="The unique identifier for the campaign.")
     date: str = Field(..., description="The date for the check in YYYY-MM-DD format, e.g., '2025-09-24'.")
     region: str = Field(..., description="The server region, e.g., 'DC1'.")
-    check_url: str = Field(
-        "https://intercom-api-gateway.moengage.com/v2/iw/check-deeplink",
-        description="The URL of the deeplink checker service to hit."
-    )
 
 # --- MCP Server Setup ---
 mcp_app = FastMCP(
@@ -31,6 +27,9 @@ def check_deeplink(inputs: DeeplinkCheckerInput) -> dict:
     Checks a deeplink by using an authentication token provided as an
     environment variable and hitting the specified deeplink check endpoint.
     """
+    # The check URL is now a fixed constant within the function.
+    CHECK_URL = "https://intercom-api-gateway.moengage.com/v2/iw/check-deeplink"
+    
     # 1. Fetch the authentication token from an environment variable
     print("Fetching token from environment variable...")
     auth_token = os.environ.get("REFRESH_TOKEN")
@@ -56,8 +55,8 @@ def check_deeplink(inputs: DeeplinkCheckerInput) -> dict:
     }
 
     try:
-        print(f"Sending POST request to {inputs.check_url}...")
-        check_response = requests.post(inputs.check_url, headers=headers, json=payload, timeout=30)
+        print(f"Sending POST request to {CHECK_URL}...")
+        check_response = requests.post(CHECK_URL, headers=headers, json=payload, timeout=30)
         check_response.raise_for_status()
 
         print("Successfully received response from deeplink checker.")
