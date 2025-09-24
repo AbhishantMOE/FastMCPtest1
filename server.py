@@ -19,10 +19,7 @@ mcp_app = FastMCP(
 )
 
 # --- Tool Definition ---
-@mcp_app.tool(
-    name="check_deeplink",
-    description="Fetches and compares the deeplink sent to a user against the one configured during campaign creation. It returns the result, highlighting any discrepancies."
-)
+@mcp_app.tool
 def check_deeplink(db_name: str, user_id: str, campaign_id: str, date: str, region: str) -> str:
     """
     Checks a deeplink by using an authentication token provided as an
