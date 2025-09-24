@@ -35,7 +35,7 @@ def check_deeplink(
         A dictionary with a 'status' and either a 'data' key on success or an 'error' key on failure.
     """
     CHECK_URL = "https://intercom-api-gateway.moengage.com/v2/iw/check-deeplink"
-    auth_token = os.environ.get(REFRESH_TOKEN)
+    auth_token = os.environ.get("REFRESH_TOKEN")
 
     if not auth_token:
         print(f"ERROR: {AUTH_TOKEN_ENV_VAR} environment variable not set.")
